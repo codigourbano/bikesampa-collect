@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 var fs = require('fs');
 var _ = require('underscore');
 var async = require('async');
@@ -7,13 +5,7 @@ var winston = require('winston');
 var mongoose = require('mongoose');
 var bikesampa = require('bikesampa-scraper');
 var moment = require('moment');
-
-/*
- * Configuration
- */
-
-var db = 'mongodb://localhost/bikesampa';
-var mapUrl = 'http://mobilicidade.com.br/bikesampa/mapaestacao.asp';
+var config = require('./config.js')
 
 /*
  * Init database
@@ -21,7 +13,7 @@ var mapUrl = 'http://mobilicidade.com.br/bikesampa/mapaestacao.asp';
 
 var connect = function () {
   var options = { server: { socketOptions: { keepAlive: 1 } } };
-  mongoose.connect(db, options);
+  mongoose.connect(config.db, options);
 };
 connect();
 
@@ -44,7 +36,7 @@ fs.readdirSync(__dirname + '/models').forEach(function (file) {
  * Start script when mongoose is ready
  */
 mongoose.connection.on('connected', function(){
-  winston.info('Script (re-)started.');
+  winston.info('Script initiated.');
   StationStatus = mongoose.model('station_status');
   Station = mongoose.model('station');
   getData();
@@ -56,7 +48,7 @@ mongoose.connection.on('connected', function(){
  * Setup logging
  */
 var MongoDB = require('winston-mongodb').MongoDB;
-winston.add(MongoDB, {dbUri: db});
+winston.add(MongoDB, {dbUri: config.db});
 
 // get data from site
 function getData(cb) {
@@ -161,9 +153,6 @@ function persist(stations, donePersist) {
       stats.stations_offline_sum++;
     }
   });
-
-  winston.info(stats);
-
 
   async.series([saveStationsBasicInfo, saveStationsStatus], donePersist);
 }
